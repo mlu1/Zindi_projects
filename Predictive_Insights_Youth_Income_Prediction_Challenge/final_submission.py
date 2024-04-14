@@ -931,3 +931,4 @@ predict = LinearRegression().fit(stack, y).predict(stack_p)
 df_submission = pd.DataFrame({"ID": df_test["Person_id"], "Target": predict})
 print(df_submission.head(30))
 df_submission.to_csv("submission.csv", index=False)
+

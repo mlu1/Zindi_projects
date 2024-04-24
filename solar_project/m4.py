@@ -52,6 +52,8 @@ X = train_num_df.drop('pm2_5', axis = 1)
 y = train.pm2_5
 
 test_df = test[X.columns]
+feautres_name=X.columns
+keys= ["id"]
 
 Target_name = y
 from xgb import * 

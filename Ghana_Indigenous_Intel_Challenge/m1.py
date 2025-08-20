@@ -40,10 +40,18 @@ def parse_time_features(df, time_col='prediction_time'):
         df['pred_hour'] = dt.dt.hour
         df['pred_dow'] = dt.dt.dayofweek
         df['pred_date'] = dt.dt.date.astype('str')
+        #df['sin_hour'] = dt.sin(2*np.pi*df['pred_hour']/24)
+        #df['cos_hour'] = dt.cos(2*np.pi*df['pred_hour']/24)
+        df['dow']    = dt.dt.dayofweek
+        df['sin_dow'] = np.sin(2*np.pi*df['dow']/7)
+        df['cos_dow'] = np.cos(2*np.pi*df['dow']/7)
     return df
 
 train = parse_time_features(train)
 test  = parse_time_features(test)
+
+
+print(train.head(10))
 
 TARGET = "Target"
 ID_COL = "ID"
@@ -82,15 +90,35 @@ preprocess = ColumnTransformer(
     ]
 )
 
+'''
 model = RandomForestClassifier(
     n_estimators=300,
     n_jobs=-1,
     random_state=42
 )
+model = RandomForestClassifier()
+'''
 
+import lightgbm as lgb
+
+lgb_clf = lgb.LGBMClassifier(
+    objective='multiclass',
+    class_weight='balanced',    # macro-F1 cares about minorities
+    n_estimators=600,
+    learning_rate=0.05,
+    num_leaves=64,
+    random_state=42
+)
+
+pipe = Pipeline([
+    ('pre', preprocess),        # same ColumnTransformer as before
+    ('model', lgb_clf)
+])
+
+'''
 pipe = Pipeline(steps=[('preprocess', preprocess),
                       ('model', model)])
-
+'''
 X = train[feature_cols].drop(columns=[ID_COL], errors='ignore')
 y = train[TARGET]
 
@@ -143,7 +171,7 @@ submission = conform_to_sample(sample_sub, pred_df, id_col=ID_COL)
 save_path = "submission_baseline.csv"
 submission.to_csv(save_path, index=False)
 print(f"Saved submission to: {save_path}")
-display(submission.head())
+print(submission.head())
 
 # Sanity checks
 assert list(submission.columns) == list(sample_sub.columns), "Column names/order mismatch vs SampleSubmission"
